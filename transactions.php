@@ -279,9 +279,9 @@ include 'includes/sidebar.php';
                             <label class="block text-sm font-semibold text-blue-700 mb-2">Total Contract Amount (Full Price)</label>
                             <div class="relative">
                                 <span class="absolute left-4 top-3 text-blue-400 font-bold">Rp</span>
-                                <input type="number" name="contract_amount" id="contract_amount" value="<?php echo isset($editData['contract_amount']) ? $editData['contract_amount'] : ($_POST['contract_amount'] ?? '0'); ?>" readonly class="w-full p-3 pl-12 rounded-xl border border-blue-200 bg-slate-50 text-slate-500 cursor-not-allowed outline-none transition-all">
+                                <input type="number" name="contract_amount" id="contract_amount" value="<?php echo isset($editData['contract_amount']) ? $editData['contract_amount'] : ($_POST['contract_amount'] ?? '0'); ?>" class="w-full p-3 pl-12 rounded-xl border border-blue-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
                             </div>
-                            <p class="text-[10px] text-blue-400 mt-1">Nilai total tagihan diambil otomatis dari data DP</p>
+                            <p class="text-[10px] text-blue-400 mt-1">Nilai total tagihan (sebelum dipotong DP)</p>
                         </div>
 
                         <!-- DP Selection: Only for Remainder -->
@@ -546,6 +546,17 @@ include 'includes/sidebar.php';
                 }
             }
 
+            function updateContractStatus() {
+                const val = ptSelect.value;
+                if (val === 'REMAINDER') {
+                    contractInput.readOnly = true;
+                    contractInput.classList.add('bg-slate-50', 'text-slate-500', 'cursor-not-allowed');
+                } else {
+                    contractInput.readOnly = false;
+                    contractInput.classList.remove('bg-slate-50', 'text-slate-500', 'cursor-not-allowed');
+                }
+            }
+
             ptSelect.addEventListener('change', () => {
                 const val = ptSelect.value;
                 if (val === 'DP' || val === 'REMAINDER') {
@@ -560,13 +571,15 @@ include 'includes/sidebar.php';
                 } else {
                     paymentInfo.classList.add('hidden');
                 }
+                updateContractStatus();
                 updateRemainderCalc();
             });
 
             dpSelect.addEventListener('change', updateRemainderCalc);
             contractInput.addEventListener('input', updateRemainderCalc);
 
-            // Initial trigger if edit
+            // Initial trigger
+            updateContractStatus();
             if (ptSelect.value === 'REMAINDER') {
                 updateRemainderCalc();
             }
