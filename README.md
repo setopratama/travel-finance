@@ -51,7 +51,15 @@ Proyek ini dikonfigurasi menggunakan **Docker Compose** dengan layanan berikut:
 - **Transaction Engine**: 
   - Penanganan dinamis Pendapatan (Sales) dan Beban (Expense).
   - Baris item dinamis menggunakan Vanilla JS tanpa reload halaman.
-- **Pelaporan & Cetak**: 
+- **Multi-Level Permissions**:
+  - **Superadmin**: Akses penuh termasuk manajemen akun user dan pengaturan sistem.
+  - **Admin**: Akses operasional untuk transaksi, pelanggan, dan laporan.
+- **Internal Audit Trail**: Mencatat admin pembuat di setiap transaksi (Invoice/Expense) sebagai catatan internal tanpa mengganggu tampilan cetak pelanggan.
+- **Sleek UI/UX (Modernization)**:
+  - **Kebab Action Menu**: Merapikan daftar transaksi dengan tombol burger tiga titik yang simpel.
+  - **Professional Typography**: Optimasi ukuran font dan tata letak untuk tampilan yang lebih padat dan profesional (*Professional Compact View*).
+  - **Audit Information**: Menampilkan nama pembuat transaksi langsung di tabel list untuk memudahkan koordinasi tim.
+- **Reporting & Printing**: 
   - Mesin cetak (print) untuk Invoice dan Voucher profesional.
   - Rincian breakdown Pembayaran (Nilai Kontrak, DP Terbayar, Sisa Pelunasan) otomatis tercetak.
 
@@ -80,9 +88,10 @@ Proyek ini dikonfigurasi menggunakan **Docker Compose** dengan layanan berikut:
 
 1. **Integrated CRM**: Pemisahan data pelanggan ke tabel `customers` namun tetap terintegrasi erat dengan alur transaksi.
 2. **Logic DP-Linkage**: Implementasi kolom `dp_id` dan `contract_amount` untuk mendukung pelacakan cicilan pembayaran.
-3. **Form Resilience**: Formulir transaksi sekarang mempertahankan input data jika terjadi error saat penyimpanan (Error Persistence).
-4. **Enhanced Catching**: Menggunakan blok `Throwable` pada handler POST untuk menangkap error teknis yang lebih luas dan memberikan feedback visual kepada admin.
-5. **Print Breakdown**: Penambahan rincian matematika pembayaran pada footer cetakan invoice khusus untuk jenis pelunasan.
+3. **User Level Architecture**: Penambahan role-based access control (RBAC) dengan kategori Superadmin dan Admin.
+4. **Creator Tracking**: Penambahan foreign key `created_by` pada tabel transaksi untuk sistem audit internal.
+5. **UI Compact Overhaul**: Penyesuaian `html body { font-size: 14px }` dan penggunaan dropdown menu untuk aksi tabel demi estetika dashboard yang lebih bersih.
+6. **PHP 8.1 Compatibility**: Perbaikan penanganan nilai null pada fungsi `htmlspecialchars()` guna mencegah *Deprecation Warnings* pada server modern.
 
 ---
 
