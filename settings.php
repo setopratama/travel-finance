@@ -14,6 +14,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
     $msg = "Settings updated successfully!";
 }
 
+// Handle User Management (Superadmin Only)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_user']) && $_SESSION['role'] === 'superadmin') {
+    $new_username = $_POST['new_username'];
+    $new_password = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
+    $new_role = $_POST['new_role'];
+
+    try {
+        $stmt = $pdo->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
+        $stmt->execute([$new_username, $new_password, $new_role]);
+        $msg = "User $new_username added successfully!";
+    } catch (Exception $e) {
+        $msg = "Error adding user: " . $e->getMessage();
+    }
+}
+
+if (isset($_GET['delete_user']) && $_SESSION['role'] === 'superadmin') {
+    $user_id = $_GET['delete_user'];
+    if ($user_id != $_SESSION['user_id']) {
+        $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+        $stmt->execute([$user_id]);
+        $msg = "User deleted successfully!";
+    } else {
+        $msg = "Error: You cannot delete yourself!";
+    }
+}
+
 // Handle DB Sync
 if (isset($_GET['sync'])) {
     try {
@@ -111,6 +137,86 @@ include 'includes/sidebar.php';
             </div>
         </div>
     </div>
+
+    <?php if ($_SESSION['role'] === 'superadmin'): ?>
+    <!-- User Management Section (Superadmin Only) -->
+    <div class="mt-12">
+        <header class="mb-6">
+            <h3 class="text-2xl font-bold text-slate-800">User Management</h3>
+            <p class="text-slate-500">Create and manage administrative accounts</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Add User Form -->
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 h-fit">
+                <h4 class="text-lg font-bold text-slate-800 mb-6 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
+                    </svg>
+                    Add New Admin
+                </h4>
+                <form method="POST" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Username</label>
+                        <input type="text" name="new_username" required class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Password</label>
+                        <input type="password" name="new_password" required class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Role</label>
+                        <select name="new_role" class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                            <option value="admin">Admin</option>
+                            <option value="superadmin">Superadmin</option>
+                        </select>
+                    </div>
+                    <button type="submit" name="add_user" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">
+                        Create Account
+                    </button>
+                </form>
+            </div>
+
+            <!-- User List -->
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-slate-50">
+                        <tr class="text-left text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            <th class="p-6">Username</th>
+                            <th class="p-6">Role</th>
+                            <th class="p-6 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <?php
+                        $users = $pdo->query("SELECT * FROM users ORDER BY role DESC, username ASC")->fetchAll();
+                        foreach ($users as $u):
+                        ?>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="p-6">
+                                <div class="font-bold text-slate-800"><?php echo htmlspecialchars($u['username']); ?></div>
+                                <div class="text-xs text-slate-400">Created <?php echo date('d M Y', strtotime($u['created_at'])); ?></div>
+                            </td>
+                            <td class="p-6">
+                                <span class="px-3 py-1 rounded-full text-xs font-bold <?php echo $u['role'] === 'superadmin' ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600'; ?>">
+                                    <?php echo ucfirst($u['role']); ?>
+                                </span>
+                            </td>
+                            <td class="p-6 text-right">
+                                <?php if ($u['id'] != $_SESSION['user_id']): ?>
+                                    <a href="settings.php?delete_user=<?php echo $u['id']; ?>" onclick="return confirm('Are you sure you want to delete this user?')" class="text-red-500 hover:text-red-700 font-bold text-sm">Delete</a>
+                                <?php else: ?>
+                                    <span class="text-slate-300 text-sm italic">You</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 </main>
 
 <?php include 'includes/footer.php'; ?>

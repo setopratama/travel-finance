@@ -70,8 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($action === 'save' || $action === 
             $stmt->execute([$transaction_id]);
         } else {
             // INSERT
-            $stmt = $pdo->prepare("INSERT INTO transactions (type, category, ref_no, date, customer_name, total_amount, status, payment_type, dp_id, contract_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$t_type, $category, $ref_no, $date, $customer_name, $total_amount, $status, $payment_type, $dp_id, $contract_amount]);
+            $stmt = $pdo->prepare("INSERT INTO transactions (type, category, ref_no, date, customer_name, total_amount, status, payment_type, dp_id, contract_amount, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$t_type, $category, $ref_no, $date, $customer_name, $total_amount, $status, $payment_type, $dp_id, $contract_amount, $_SESSION['user_id']]);
             $transaction_id = $pdo->lastInsertId();
         }
 
@@ -105,7 +105,7 @@ if ($action === 'duplicate' && isset($_GET['id'])) {
             $new_date = date('Y-m-d');
             
             // Insert new transaction header
-            $stmt = $pdo->prepare("INSERT INTO transactions (type, category, ref_no, date, customer_name, total_amount, status, payment_type, dp_id, contract_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO transactions (type, category, ref_no, date, customer_name, total_amount, status, payment_type, dp_id, contract_amount, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([
                 $source['type'], 
                 $source['category'], 
@@ -116,7 +116,8 @@ if ($action === 'duplicate' && isset($_GET['id'])) {
                 'PENDING', 
                 $source['payment_type'],
                 $source['dp_id'],
-                $source['contract_amount']
+                $source['contract_amount'],
+                $_SESSION['user_id']
             ]);
             $new_id = $pdo->lastInsertId();
 
@@ -208,8 +209,8 @@ include 'includes/sidebar.php';
         <!-- FORM -->
         <header class="flex justify-between items-center mb-10">
             <div>
-                <h2 class="text-3xl font-bold text-slate-800"><?php echo (in_array($action, ['edit', 'update']) ? 'Edit ' : 'New ') . ($type === 'INCOME' ? 'Invoice' : 'Expense'); ?></h2>
-                <p class="text-slate-500"><?php echo in_array($action, ['edit', 'update']) ? 'Update financial record' : 'Create a new financial record'; ?></p>
+                <h2 class="text-2xl font-bold text-slate-800"><?php echo (in_array($action, ['edit', 'update']) ? 'Edit ' : 'New ') . ($type === 'INCOME' ? 'Invoice' : 'Expense'); ?></h2>
+                <p class="text-sm text-slate-500"><?php echo in_array($action, ['edit', 'update']) ? 'Update financial record' : 'Create a new financial record'; ?></p>
             </div>
             <a href="transactions.php?type=<?php echo $type; ?>" class="text-slate-500 hover:text-slate-800 font-medium flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
@@ -589,8 +590,8 @@ include 'includes/sidebar.php';
         <!-- LIST VIEW -->
         <header class="flex justify-between items-center mb-10">
             <div>
-                <h2 class="text-3xl font-bold text-slate-800"><?php echo $type === 'INCOME' ? 'Sales Invoices' : 'Expense Vouchers'; ?></h2>
-                <p class="text-slate-500">History of your <?php echo strtolower($type); ?> transactions</p>
+                <h2 class="text-2xl font-bold text-slate-800"><?php echo $type === 'INCOME' ? 'Sales Invoices' : 'Expense Vouchers'; ?></h2>
+                <p class="text-sm text-slate-500">History of your <?php echo strtolower($type); ?> transactions</p>
             </div>
             <a href="transactions.php?action=add&type=<?php echo $type; ?>" class="bg-blue-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -616,12 +617,13 @@ include 'includes/sidebar.php';
                         <th class="p-6">Category</th>
                         <th class="p-6">Total</th>
                         <th class="p-6">Status</th>
+                        <th class="p-6 text-center">Admin</th>
                         <th class="p-6 text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     <?php
-                    $stmt = $pdo->prepare("SELECT * FROM transactions WHERE type = ? ORDER BY date DESC, id DESC");
+                    $stmt = $pdo->prepare("SELECT t.*, u.username as creator_name FROM transactions t LEFT JOIN users u ON t.created_by = u.id WHERE t.type = ? ORDER BY t.date DESC, t.id DESC");
                     $stmt->execute([$type]);
                     $transactions = $stmt->fetchAll();
 
@@ -654,41 +656,56 @@ include 'includes/sidebar.php';
                             <?php else: ?>
                                 <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-600">Pending</span>
                             <?php endif; ?>
+                        <td class="p-6 text-center">
+                            <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded">
+                                <?php echo htmlspecialchars($t['creator_name'] ?: 'System'); ?>
+                            </span>
                         </td>
-                        <td class="p-6 text-right">
-                            <div class="flex items-center justify-end space-x-3">
-                                <a href="update_status.php?id=<?php echo $t['id']; ?>" class="text-amber-600 hover:text-amber-800 font-bold text-sm flex items-center transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                        <td class="p-6 text-right relative">
+                            <div class="flex justify-end">
+                                <button type="button" class="dropdown-toggle p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                                     </svg>
-                                    Status
-                                </a>
-                                <a href="transactions.php?action=edit&id=<?php echo $t['id']; ?>" class="text-blue-500 hover:text-blue-700 font-bold text-sm flex items-center transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                                    </svg>
-                                    Edit
-                                </a>
-                                <a href="print.php?id=<?php echo $t['id']; ?>" class="text-slate-500 hover:text-blue-600 font-bold text-sm flex items-center transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                        <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-                                    </svg>
-                                    View
-                                </a>
-                                <a href="print.php?id=<?php echo $t['id']; ?>" target="_blank" class="text-blue-600 hover:text-blue-800 font-bold text-sm flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd" />
-                                    </svg>
-                                    Print
-                                </a>
-                                <button onclick="confirmDuplicate(<?php echo $t['id']; ?>)" class="text-slate-400 hover:text-blue-600 font-bold text-sm flex items-center transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                        <path d="M7 9a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2H9a2 2 0 01-2-2V9z" />
-                                        <path d="M5 5a2 2 0 012-2h6a2 2 0 012 2v2H7a4 4 0 00-4 4v6a2 2 0 01-2-2V7a2 2 0 012-2h2V5z" />
-                                    </svg>
-                                    Duplicate
                                 </button>
+                                <div class="dropdown-menu absolute right-16 mt-2 w-48 bg-white border border-slate-100 rounded-xl shadow-xl z-50 overflow-hidden">
+                                    <div class="py-1">
+                                        <a href="update_status.php?id=<?php echo $t['id']; ?>" class="flex items-center px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 font-medium">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-3 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                                            </svg>
+                                            Update Status
+                                        </a>
+                                        <a href="transactions.php?action=edit&id=<?php echo $t['id']; ?>" class="flex items-center px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 font-medium border-t border-slate-50">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-3 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                            </svg>
+                                            Edit Record
+                                        </a>
+                                        <a href="print.php?id=<?php echo $t['id']; ?>" class="flex items-center px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 font-medium">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-3 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+                                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                            </svg>
+                                            View Details
+                                        </a>
+                                        <a href="print.php?id=<?php echo $t['id']; ?>" target="_blank" class="flex items-center px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 font-medium">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-3 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd" />
+                                            </svg>
+                                            Print Invoice
+                                        </a>
+                                        <div class="border-t border-slate-50">
+                                            <button onclick="confirmDuplicate(<?php echo $t['id']; ?>)" class="w-full flex items-center px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 font-medium text-left">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-3 text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M7 9a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2H9a2 2 0 01-2-2V9z" />
+                                                    <path d="M5 5a2 2 0 012-2h6a2 2 0 012 2v2H7a4 4 0 00-4 4v6a2 2 0 01-2-2V7a2 2 0 012-2h2V5z" />
+                                                </svg>
+                                                Duplicate
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </td>
                     </tr>

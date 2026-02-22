@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // 4. Create Admin User
         $hashed_pass = password_hash($admin_pass, PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare("INSERT INTO users (username, password) VALUES (?, ?) ON DUPLICATE KEY UPDATE password = ?");
+        $stmt = $pdo->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, 'superadmin') ON DUPLICATE KEY UPDATE password = ?, role = 'superadmin'");
         $stmt->execute([$admin_user, $hashed_pass, $hashed_pass]);
 
         // 5. Generate config/db.php

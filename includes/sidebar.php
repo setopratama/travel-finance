@@ -65,5 +65,17 @@
                 <span>Logout</span>
             </a>
         </nav>
+        
+        <div class="mt-auto pt-6 border-t border-slate-100">
+            <div class="flex items-center space-x-3 p-3 bg-slate-50 rounded-2xl">
+                <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 font-bold">
+                    <?php echo strtoupper(substr($_SESSION['username'] ?? '', 0, 1)); ?>
+                </div>
+                <div>
+                    <div class="text-sm font-bold text-slate-800"><?php echo htmlspecialchars($_SESSION['username'] ?? ''); ?></div>
+                    <div class="text-[10px] uppercase font-bold text-blue-500"><?php echo htmlspecialchars($_SESSION['role'] ?? ''); ?></div>
+                </div>
+            </div>
+        </div>
     </div>
 </aside>

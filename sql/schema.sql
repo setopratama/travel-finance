@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
+    role ENUM('superadmin', 'admin') NOT NULL DEFAULT 'admin',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -23,7 +24,9 @@ CREATE TABLE IF NOT EXISTS transactions (
     total_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
     status ENUM('PAID', 'PENDING', 'CANCELLED') NOT NULL DEFAULT 'PENDING',
     cancel_reason TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_by INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS transaction_items (
@@ -62,6 +65,16 @@ INSERT IGNORE INTO settings (id, company_name) VALUES (1, 'Travel Finance Pro');
 -- ==========================================
 -- Tambahkan perintah ALTER TABLE atau CREATE TABLE baru di bawah ini.
 -- Jalankan melalui menu Settings > One-Click DB Sync.
+
+-- Add role to users
+ALTER TABLE users ADD COLUMN role ENUM('superadmin', 'admin') NOT NULL DEFAULT 'admin';
+
+-- Add created_by to transactions
+ALTER TABLE transactions ADD COLUMN created_by INT;
+ALTER TABLE transactions ADD FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL;
+
+-- Ensure first user is superadmin
+UPDATE users SET role = 'superadmin' WHERE id = 1;
 
 CREATE TABLE IF NOT EXISTS categories (
     id INT AUTO_INCREMENT PRIMARY KEY,

@@ -44,8 +44,8 @@ foreach ($chart_data as $row) {
 <main class="flex-1 p-8 overflow-y-auto">
     <header class="flex justify-between items-center mb-10">
         <div>
-            <h2 class="text-3xl font-bold text-slate-800">Financial Dashboard</h2>
-            <p class="text-slate-500">Welcome back, <?php echo $_SESSION['username']; ?>!</p>
+            <h2 class="text-2xl font-bold text-slate-800">Financial Dashboard</h2>
+            <p class="text-sm text-slate-500">Welcome back, <?php echo $_SESSION['username']; ?>!</p>
         </div>
         <div class="flex space-x-3">
             <a href="transactions.php?action=add&type=INCOME" class="bg-blue-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center">
@@ -60,8 +60,8 @@ foreach ($chart_data as $row) {
     <!-- Stats Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-            <p class="text-slate-400 text-sm font-semibold mb-1 uppercase tracking-wider">Total Revenue</p>
-            <h3 class="text-2xl font-bold text-slate-800"><?php echo formatCurrency($revenue); ?></h3>
+            <p class="text-slate-400 text-[10px] font-bold mb-1 uppercase tracking-widest">Total Revenue</p>
+            <h3 class="text-xl font-bold text-slate-800"><?php echo formatCurrency($revenue); ?></h3>
             <div class="mt-4 flex items-center text-green-500 text-sm font-medium">
                 <span class="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center mr-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -72,8 +72,8 @@ foreach ($chart_data as $row) {
             </div>
         </div>
         <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-            <p class="text-slate-400 text-sm font-semibold mb-1 uppercase tracking-wider">Total Expense</p>
-            <h3 class="text-2xl font-bold text-slate-800"><?php echo formatCurrency($total_expenses); ?></h3>
+            <p class="text-slate-400 text-[10px] font-bold mb-1 uppercase tracking-widest">Total Expense</p>
+            <h3 class="text-xl font-bold text-slate-800"><?php echo formatCurrency($total_expenses); ?></h3>
             <div class="mt-4 flex items-center text-red-500 text-sm font-medium">
                 <span class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center mr-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -84,15 +84,15 @@ foreach ($chart_data as $row) {
             </div>
         </div>
         <div class="bg-blue-600 p-6 rounded-2xl shadow-xl shadow-blue-100">
-            <p class="text-blue-100 text-sm font-semibold mb-1 uppercase tracking-wider">Net Profit</p>
-            <h3 class="text-2xl font-bold text-white"><?php echo formatCurrency($net_profit); ?></h3>
+            <p class="text-blue-100 text-[10px] font-bold mb-1 uppercase tracking-widest">Net Profit</p>
+            <h3 class="text-xl font-bold text-white"><?php echo formatCurrency($net_profit); ?></h3>
             <div class="mt-4 text-blue-200 text-sm font-medium">
                 Sisa bersih (Income-All)
             </div>
         </div>
         <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-            <p class="text-slate-400 text-sm font-semibold mb-1 uppercase tracking-wider">Pending Payments</p>
-            <h3 class="text-2xl font-bold text-slate-800"><?php echo formatCurrency($pending); ?></h3>
+            <p class="text-slate-400 text-[10px] font-bold mb-1 uppercase tracking-widest">Pending Payments</p>
+            <h3 class="text-xl font-bold text-slate-800"><?php echo formatCurrency($pending); ?></h3>
             <div class="mt-4 flex items-center text-amber-500 text-sm font-medium">
                 <span class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center mr-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -107,11 +107,11 @@ foreach ($chart_data as $row) {
     <!-- Chart and Recent -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2 bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
-            <h4 class="text-lg font-bold text-slate-800 mb-6">Financial Trends</h4>
+            <h4 class="text-base font-bold text-slate-800 mb-6">Financial Trends</h4>
             <canvas id="balanceChart" height="200"></canvas>
         </div>
         <div class="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
-            <h4 class="text-lg font-bold text-slate-800 mb-6">Quick Stats</h4>
+            <h4 class="text-base font-bold text-slate-800 mb-6">Quick Stats</h4>
             <div class="space-y-6">
                 <div class="flex items-center justify-between">
                     <span class="text-slate-500">Tickets Sold</span>
