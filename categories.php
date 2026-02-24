@@ -35,7 +35,7 @@ include 'includes/sidebar.php';
 <main class="flex-1 p-8 overflow-y-auto">
     <header class="mb-10">
         <h2 class="text-3xl font-bold text-slate-800">Category Management</h2>
-        <p class="text-slate-500">Kelola kategori untuk Income dan Expense</p>
+        <p class="text-slate-500">Kelola kategori untuk Income, Expense, dan Refund</p>
     </header>
 
     <?php if ($msg = getFlash('success')): ?>
@@ -70,6 +70,13 @@ include 'includes/sidebar.php';
                                     <div class="w-2 h-2 bg-white rounded-full"></div>
                                 </div>
                                 <span class="text-slate-600 group-hover:text-red-600 font-medium capitalize">Pengeluaran</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="radio" name="type" value="REFUND" class="hidden peer" id="type_refund">
+                                <div class="w-5 h-5 border-2 border-slate-300 rounded-full flex items-center justify-center peer-checked:border-amber-600 peer-checked:bg-amber-600 transition-all mr-2">
+                                    <div class="w-2 h-2 bg-white rounded-full"></div>
+                                </div>
+                                <span class="text-slate-600 group-hover:text-amber-600 font-medium capitalize">Refund</span>
                             </label>
                         </div>
                     </div>
@@ -115,20 +122,20 @@ include 'includes/sidebar.php';
                 </table>
             </div>
 
-            <!-- Expense Categories -->
+            <!-- Refund Categories -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                 <div class="p-6 border-b border-slate-50 bg-slate-50/50">
-                    <h4 class="font-bold text-slate-800 flex items-center text-red-600">
+                    <h4 class="font-bold text-slate-800 flex items-center text-amber-600">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M12 13a1 1 0 110 2h-5a1 1 0 01-1-1v-5a1 1 0 112 0v2.586l4.293-4.293a1 1 0 011.414 0L12 9.586l4.293-4.293a1 1 0 111.414 1.414l-5 5a1 1 0 01-1.414 0L9 9.414 5.414 13H12z" clip-rule="evenodd" />
+                            <path fill-rule="evenodd" d="M4 2a2 2 0 00-2 2v2a2 2 0 104 0V4a2 2 0 00-2-2H4zm1 2v2H4V4h1zm8-2a2 2 0 00-2 2v2a2 2 0 104 0V4a2 2 0 00-2-2h-1zm1 2v2h-1V4h1zm-11 8a2 2 0 00-2 2v2a2 2 0 104 0v-2a2 2 0 00-2-2H4zm1 2v2H4v-2h1zm8-2a2 2 0 00-2 2v2a2 2 0 104 0v-2a2 2 0 00-2-2h-1zm1 2v2h-1v-2h1z" clip-rule="evenodd" />
                         </svg>
-                        Kategori Pengeluaran (Expense)
+                        Kategori Refund (Refund & Reversal)
                     </h4>
                 </div>
                 <table class="w-full">
                     <tbody class="divide-y divide-slate-50">
                         <?php
-                        $stmt = $pdo->prepare("SELECT * FROM categories WHERE type='EXPENSE' ORDER BY name ASC");
+                        $stmt = $pdo->prepare("SELECT * FROM categories WHERE type='REFUND' ORDER BY name ASC");
                         $stmt->execute();
                         $cats = $stmt->fetchAll();
                         foreach ($cats as $c):
@@ -144,6 +151,9 @@ include 'includes/sidebar.php';
                             </td>
                         </tr>
                         <?php endforeach; ?>
+                        <?php if (empty($cats)): ?>
+                        <tr><td class="p-4 text-slate-400 text-sm italic">Belum ada kategori refund.</td></tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>

@@ -62,6 +62,11 @@ Proyek ini dikonfigurasi menggunakan **Docker Compose** dengan layanan berikut:
 - **Reporting & Printing**: 
   - Mesin cetak (print) untuk Invoice dan Voucher profesional.
   - Rincian breakdown Pembayaran (Nilai Kontrak, DP Terbayar, Sisa Pelunasan) otomatis tercetak.
+- **Refund & Reversal System**:
+  - Modul khusus untuk menangani pengembalian dana.
+  - **Invoice Linking**: Menghubungkan refund dengan invoice asal untuk pengisian data otomatis.
+  - **Security Lock**: Mengunci nama customer pada transaksi refund yang terhubung ke invoice untuk validasi data.
+  - **Dashboard Integration**: Statistik pengembalian dana tercatat secara terpisah dan memotong laba bersih.
 
 ---
 
@@ -90,8 +95,9 @@ Proyek ini dikonfigurasi menggunakan **Docker Compose** dengan layanan berikut:
 2. **Logic DP-Linkage**: Implementasi kolom `dp_id` dan `contract_amount` untuk mendukung pelacakan cicilan pembayaran.
 3. **User Level Architecture**: Penambahan role-based access control (RBAC) dengan kategori Superadmin dan Admin.
 4. **Creator Tracking**: Penambahan foreign key `created_by` pada tabel transaksi untuk sistem audit internal.
-5. **UI Compact Overhaul**: Penyesuaian `html body { font-size: 14px }` dan penggunaan dropdown menu untuk aksi tabel demi estetika dashboard yang lebih bersih.
-6. **PHP 8.1 Compatibility**: Perbaikan penanganan nilai null pada fungsi `htmlspecialchars()` guna mencegah *Deprecation Warnings* pada server modern.
+5. **Full Integrated Ecosystem**: Seluruh fitur (Refund, DP/Termin, CRM) telah disatukan dalam satu skema database (`sql/schema.sql`) yang bersih untuk kemudahan deployment awal.
+6. **UI Compact Overhaul**: Penyesuaian `html body { font-size: 14px }` dan penggunaan dropdown menu untuk aksi tabel demi estetika dashboard yang lebih bersih.
+7. **PHP 8.1 Compatibility**: Perbaikan penanganan nilai null pada fungsi `htmlspecialchars()` guna mencegah *Deprecation Warnings* pada server modern.
 
 ---
 

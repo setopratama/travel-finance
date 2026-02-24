@@ -194,6 +194,28 @@ if ($action === 'edit' && !empty($editData['dp_id'])) {
     }
 }
 
+// Fetch Invoices for Refund
+$invoiceTransactions = [];
+if ($type === 'REFUND') {
+    $invoiceTransactions = $pdo->query("SELECT id, ref_no, customer_name, total_amount FROM transactions WHERE type = 'INCOME' AND status != 'CANCELLED' ORDER BY date DESC")->fetchAll(PDO::FETCH_ASSOC);
+    
+    // If editing a refund, make sure its linked invoice is in the list
+    if ($action === 'edit' && !empty($editData['dp_id'])) {
+        $exists = false;
+        foreach ($invoiceTransactions as $inv) {
+             if ($inv['id'] == $editData['dp_id']) { $exists = true; break; }
+        }
+        if (!$exists) {
+            $stmt = $pdo->prepare("SELECT id, ref_no, customer_name, total_amount FROM transactions WHERE id = ?");
+            $stmt->execute([$editData['dp_id']]);
+            $currentInv = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($currentInv) {
+                array_unshift($invoiceTransactions, $currentInv);
+            }
+        }
+    }
+}
+
 include 'includes/header.php';
 include 'includes/sidebar.php';
 ?>
@@ -209,7 +231,13 @@ include 'includes/sidebar.php';
         <!-- FORM -->
         <header class="flex justify-between items-center mb-10">
             <div>
-                <h2 class="text-2xl font-bold text-slate-800"><?php echo (in_array($action, ['edit', 'update']) ? 'Edit ' : 'New ') . ($type === 'INCOME' ? 'Invoice' : 'Expense'); ?></h2>
+                <h2 class="text-2xl font-bold text-slate-800">
+                    <?php 
+                        if ($type === 'INCOME') echo (in_array($action, ['edit', 'update']) ? 'Edit ' : 'New ') . 'Invoice';
+                        elseif ($type === 'EXPENSE') echo (in_array($action, ['edit', 'update']) ? 'Edit ' : 'New ') . 'Expense';
+                        else echo (in_array($action, ['edit', 'update']) ? 'Edit ' : 'New ') . 'Refund';
+                    ?>
+                </h2>
                 <p class="text-sm text-slate-500"><?php echo in_array($action, ['edit', 'update']) ? 'Update financial record' : 'Create a new financial record'; ?></p>
             </div>
             <a href="transactions.php?type=<?php echo $type; ?>" class="text-slate-500 hover:text-slate-800 font-medium flex items-center">
@@ -261,7 +289,7 @@ include 'includes/sidebar.php';
                             <option value="CANCELLED" <?php echo ($currentStatus === 'CANCELLED') ? 'selected' : ''; ?>>Cancelled</option>
                         </select>
                     </div>
-                    <div>
+                    <div class="<?php echo ($type === 'REFUND' ? 'hidden' : ''); ?>">
                         <label class="block text-sm font-semibold text-slate-700 mb-2">Payment Type</label>
                         <select name="payment_type" id="payment_type" class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
                             <?php $currentPT = isset($editData['payment_type']) ? $editData['payment_type'] : ($_POST['payment_type'] ?? 'FULL'); ?>
@@ -312,8 +340,41 @@ include 'includes/sidebar.php';
                     </div>
                 </div>
 
+                <!-- Refund Linking Section -->
+                <?php if ($type === 'REFUND'): ?>
+                <div id="refundLinking" class="mt-6 p-6 bg-amber-50 rounded-2xl border border-amber-100">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-amber-700 mb-2">Select Invoice to Refund</label>
+                            <?php $currentLinked = isset($editData['dp_id']) ? $editData['dp_id'] : ($_POST['dp_id'] ?? ($_GET['linked_id'] ?? '')); ?>
+                            <select name="dp_id" id="refund_link_id" class="w-full p-3 rounded-xl border-amber-200 focus:ring-2 focus:ring-amber-500 outline-none transition-all">
+  <option value="">-- No Linked Invoice (Ad-hoc Refund) --</option>
+                                <?php foreach ($invoiceTransactions as $inv): ?>
+                                    <option value="<?php echo $inv['id']; ?>" <?php echo ($currentLinked == $inv['id']) ? 'selected' : ''; ?> data-amount="<?php echo $inv['total_amount']; ?>" data-customer="<?php echo htmlspecialchars($inv['customer_name']); ?>">
+                                        <?php echo $inv['ref_no']; ?> - <?php echo htmlspecialchars($inv['customer_name']); ?> (<?php echo formatCurrency($inv['total_amount']); ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="text-[10px] text-amber-500 mt-1">Pilih invoice asal untuk mengisi otomatis detail refund.</p>
+                        </div>
+                        <div id="refund_info_box" class="flex items-center <?php echo empty($currentLinked) ? 'hidden' : ''; ?>">
+                             <div class="p-4 bg-white/50 rounded-xl border border-amber-100 w-full">
+                                <div class="text-[10px] uppercase font-bold text-amber-400">Invoice Amount</div>
+                                <div id="display_refund_inv_amount" class="text-xl font-bold text-amber-800">Rp 0</div>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <div class="mt-6">
-                    <label class="block text-sm font-semibold text-slate-700 mb-2"><?php echo $type === 'INCOME' ? 'Customer Name' : 'Vendor Name'; ?></label>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">
+                        <?php 
+                            if ($type === 'INCOME') echo 'Customer Name';
+                            elseif ($type === 'EXPENSE') echo 'Vendor Name';
+                            else echo 'Recipient / Customer Name';
+                        ?>
+                    </label>
                     <input type="text" name="customer_name" list="customerList" value="<?php echo isset($editData['customer_name']) ? $editData['customer_name'] : ($_POST['customer_name'] ?? ''); ?>" required class="w-full p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Type name or select from list...">
                     <datalist id="customerList">
                         <?php foreach ($customers as $c): ?>
@@ -579,6 +640,51 @@ include 'includes/sidebar.php';
             dpSelect.addEventListener('change', updateRemainderCalc);
             contractInput.addEventListener('input', updateRemainderCalc);
 
+            // Refund Linking Script
+            const refundSelect = document.getElementById('refund_link_id');
+            const refundInfoBox = document.getElementById('refund_info_box');
+            const displayRefundInvAmount = document.getElementById('display_refund_inv_amount');
+
+            if (refundSelect) {
+                refundSelect.addEventListener('change', () => {
+                    const opt = refundSelect.options[refundSelect.selectedIndex];
+                    if (opt && opt.value) {
+                        const amount = parseFloat(opt.dataset.amount || 0);
+                        const customer = opt.dataset.customer;
+                        
+                        refundInfoBox.classList.remove('hidden');
+                        displayRefundInvAmount.innerText = formatIDR(amount);
+                        
+                        // Auto-fill and LOCK customer
+                        customerInput.value = customer;
+                        customerInput.readOnly = true;
+                        customerInput.classList.add('bg-slate-50', 'text-slate-500', 'cursor-not-allowed');
+
+                        // Auto-fill first item if empty
+                        const rows = document.querySelectorAll('.item-row');
+                        if (rows.length === 1) {
+                            const desc = rows[0].querySelector('input[name*="description"]');
+                            const price = rows[0].querySelector('.price-input');
+                            if (!desc.value || desc.value.includes('Refund')) {
+                                desc.value = 'Refund of ' + opt.innerText.split(' - ')[0];
+                                price.value = amount;
+                                updateTotals();
+                            }
+                        }
+                    } else {
+                        refundInfoBox.classList.add('hidden');
+                        customerInput.readOnly = false;
+                        customerInput.classList.remove('bg-slate-50', 'text-slate-500', 'cursor-not-allowed');
+                    }
+                });
+
+                // Trigger on load if edit OR pre-selected from list
+                if (refundSelect.value) {
+                    const event = new Event('change');
+                    refundSelect.dispatchEvent(event);
+                }
+            }
+
             // Initial trigger
             updateContractStatus();
             if (ptSelect.value === 'REMAINDER') {
@@ -590,7 +696,13 @@ include 'includes/sidebar.php';
         <!-- LIST VIEW -->
         <header class="flex justify-between items-center mb-10">
             <div>
-                <h2 class="text-2xl font-bold text-slate-800"><?php echo $type === 'INCOME' ? 'Sales Invoices' : 'Expense Vouchers'; ?></h2>
+                <h2 class="text-2xl font-bold text-slate-800">
+                    <?php 
+                        if ($type === 'INCOME') echo 'Sales Invoices';
+                        elseif ($type === 'EXPENSE') echo 'Expense Vouchers';
+                        else echo 'Refunds & Reversals';
+                    ?>
+                </h2>
                 <p class="text-sm text-slate-500">History of your <?php echo strtolower($type); ?> transactions</p>
             </div>
             <a href="transactions.php?action=add&type=<?php echo $type; ?>" class="bg-blue-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center">
@@ -642,7 +754,8 @@ include 'includes/sidebar.php';
                             <?php echo formatCurrency($t['total_amount']); ?>
                             <div class="text-[10px] uppercase tracking-tighter text-slate-400 mt-1">
                                 <?php 
-                                    if($t['payment_type'] == 'DP') echo '<span class="text-amber-500">Down Payment</span>';
+                                    if($t['type'] == 'REFUND') echo '<span class="text-amber-600 font-bold">REFUND</span>';
+                                    elseif($t['payment_type'] == 'DP') echo '<span class="text-amber-500">Down Payment</span>';
                                     elseif($t['payment_type'] == 'REMAINDER') echo '<span class="text-indigo-500">Pelunasan</span>';
                                     else echo '<span>Lunas / Full</span>';
                                 ?>
@@ -695,6 +808,14 @@ include 'includes/sidebar.php';
                                             </svg>
                                             Print Invoice
                                         </a>
+                                        <?php if ($t['type'] === 'INCOME'): ?>
+                                        <a href="transactions.php?action=add&type=REFUND&linked_id=<?php echo $t['id']; ?>" class="flex items-center px-4 py-2.5 text-sm text-amber-600 hover:bg-amber-50 font-bold border-t border-slate-50">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-3" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M4 2a2 2 0 00-2 2v2a2 2 0 104 0V4a2 2 0 00-2-2H4zm1 2v2H4V4h1zm8-2a2 2 0 00-2 2v2a2 2 0 104 0V4a2 2 0 00-2-2h-1zm1 2v2h-1V4h1zm-11 8a2 2 0 00-2 2v2a2 2 0 104 0v-2a2 2 0 00-2-2H4zm1 2v2H4v-2h1zm8-2a2 2 0 00-2 2v2a2 2 0 104 0v-2a2 2 0 00-2-2h-1zm1 2v2h-1v-2h1z" clip-rule="evenodd" />
+                                            </svg>
+                                            Create Refund
+                                        </a>
+                                        <?php endif; ?>
                                         <div class="border-t border-slate-50">
                                             <button onclick="confirmDuplicate(<?php echo $t['id']; ?>)" class="w-full flex items-center px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 font-medium text-left">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-3 text-slate-400" viewBox="0 0 20 20" fill="currentColor">

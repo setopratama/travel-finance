@@ -34,6 +34,13 @@
                 <span>Purchases / Expenses</span>
             </a>
 
+            <a href="transactions.php?type=REFUND" class="flex items-center space-x-3 p-3 rounded-xl transition-all <?php echo ($current_page == 'transactions.php' && ($_GET['type'] ?? '') == 'REFUND') ? 'sidebar-item-active font-semibold' : 'text-slate-500 hover:bg-slate-50 hover:text-amber-600'; ?>">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
+                </svg>
+                <span>Refund / Reversal</span>
+            </a>
+
             <a href="categories.php" class="flex items-center space-x-3 p-3 rounded-xl transition-all <?php echo $current_page == 'categories.php' ? 'sidebar-item-active font-semibold' : 'text-slate-500 hover:bg-slate-50 hover:text-indigo-600'; ?>">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
